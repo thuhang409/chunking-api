@@ -27,11 +27,16 @@ def read_pdf(file_path):
 
 @app.route('/chunk', methods=['POST'])
 def chunk_endpoint():
+    # print("hi")
+    # try:
+    #     data = request.get_json()
+    # except:
+    #     print('huhu')
+    
+    # if 'uploadthing' not in request.files:
+    #     return jsonify({'error': 'No file part'}), 400
     '''
-    print(request.files.form)
     print(request.files)
-    if 'uploadthing' not in request.files:
-        return jsonify({'error': 'No file part'}), 400
     file = request.files['uploadthing']
     selected_option = request.form['selectedOption']
     chunk_size = int(request.form['chunk_size'])
@@ -46,12 +51,11 @@ def chunk_endpoint():
     elif filename.lower().endswith('.pdf'):
         text = read_pdf(file_path)
     print(text)  
-    
     '''
+    
     data = request.get_json()
-    print(data)
-    file_data = data.get('file', '')
-    print(file_data)
+    print(data.keys())
+    file_data = data.get('file', '')[0]['base64String']
     chunk_size = data.get('chunk_size', 1000)
     chunk_overlap = data.get('chunk_overlap', 200)
     selected_option = data.get('selected_option', 'chunks')
@@ -66,25 +70,26 @@ def chunk_endpoint():
     with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as temp_file:
         temp_file.write(file_content)
         temp_file_path = temp_file.name
-
+    print(chunk_size, chunk_overlap)
     if file_ext == '.pdf':
         text = read_pdf(temp_file_path)
     elif file_ext == '.docx':
         text = read_docx(temp_file_path)
     else:
         return jsonify({'error': 'Unsupported file type'}), 400
-
-    os.remove(temp_fileW_path)
     
-    if selected_option == "CharacterChunking":
+    # os.remove(temp_file_path)
+    # print(text[:100])
+    print(selected_option)
+    if selected_option == "Character Chunking":
         return CharacterChunking(text, chunk_size, chunk_overlap)
-    elif selected_option == "RecursionCharacterChunking":
+    elif selected_option == "Recursion Character Chunking":
         return RecursiveCharacterChunking(text, chunk_size, chunk_overlap)
-    elif selected_option == "DocumentSpecificChunking":
-        return DocumentSpecificChunking(text, chunk_size)
+    elif selected_option == "Document Specific Chunking":
+        return DocumentSpecificChunkingMarkdown(text, chunk_size)
     else:
+        print('ss')
         return jsonify({"chunks":[]})
 
-
-if __name__=="__main__":
+if __name__=="__main__": 
     app.run(debug=True)
