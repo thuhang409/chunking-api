@@ -3,9 +3,10 @@ import base64
 import tempfile
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from chunking.chunker import CharacterChunking, RecursiveCharacterChunking, DocumentSpecificChunkingMarkdown
+from chunking.chunker import CharacterChunking, RecursiveCharacterChunking, DocumentSpecificChunkingMarkdown, DocumentSpecificChunkingPython
 import fitz
 from werkzeug.utils import secure_filename
+from docx import Document
 
 app = Flask(__name__)
 CORS(app, resources={r"/chunk": {"origins": "http://localhost:3000"}})
@@ -27,34 +28,8 @@ def read_pdf(file_path):
 
 @app.route('/chunk', methods=['POST'])
 def chunk_endpoint():
-    # print("hi")
-    # try:
-    #     data = request.get_json()
-    # except:
-    #     print('huhu')
-    
-    # if 'uploadthing' not in request.files:
-    #     return jsonify({'error': 'No file part'}), 400
-    '''
-    print(request.files)
-    file = request.files['uploadthing']
-    selected_option = request.form['selectedOption']
-    chunk_size = int(request.form['chunk_size'])
-    chunk_overlap = int(request.form['chunk_overlap'])
-    
-    filename = file.filename
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    file.save(file_path)
-    
-    if filename.lower().endswith('.docx'):
-        text = read_docx(file_path)
-    elif filename.lower().endswith('.pdf'):
-        text = read_pdf(file_path)
-    print(text)  
-    '''
-    
     data = request.get_json()
-    print(data.keys())
+    # print(data.keys())
     file_data = data.get('file', '')[0]['base64String']
     chunk_size = data.get('chunk_size', 1000)
     chunk_overlap = data.get('chunk_overlap', 200)
@@ -70,7 +45,7 @@ def chunk_endpoint():
     with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as temp_file:
         temp_file.write(file_content)
         temp_file_path = temp_file.name
-    print(chunk_size, chunk_overlap)
+    # print(chunk_size, chunk_overlap)
     if file_ext == '.pdf':
         text = read_pdf(temp_file_path)
     elif file_ext == '.docx':
@@ -85,8 +60,10 @@ def chunk_endpoint():
         return CharacterChunking(text, chunk_size, chunk_overlap)
     elif selected_option == "Recursion Character Chunking":
         return RecursiveCharacterChunking(text, chunk_size, chunk_overlap)
-    elif selected_option == "Document Specific Chunking":
+    elif selected_option == "Document Specific Chunking Markdown":
         return DocumentSpecificChunkingMarkdown(text, chunk_size)
+    elif selected_option == "Document Specific Chunking Python":
+        return DocumentSpecificChunkingPython(text, chunk_size)
     else:
         print('ss')
         return jsonify({"chunks":[]})
